@@ -175,34 +175,78 @@ def get_geo_data(G):
 def load_graph(filepath):
     return gexf.read_gexf(filepath)
     
-def export_json(G):
+def export_json(G, filepath):
     data = json_graph.node_link_data(G)
-    json.dump(data, open('./data/lak-coauthor.json', 'w'))
-    
+    json.dump(data, open(filepath, 'w'))    
         
-def save_graph(G):
-    gexf.write_gexf(G, './data/lak-coauthor.gexf')
+def save_graph(G, filepath):
+    gexf.write_gexf(G, filepath)
+    
+def clean_dataset(G):
+    
+    for node in G.nodes():
+        if G.node[node]['affiliation'] == 'sess-robert-morris-university':
+            G.node[node]['location'] = 'USA'
+            G.node[node]['lat'] = '40.522069'
+            G.node[node]['lon'] = '-80.209726'        
+        elif G.node[node]['affiliation'] == 'sharif-university-of-technology':
+            G.node[node]['location'] = 'Iran'
+            G.node[node]['lat'] = '35.70379'
+            G.node[node]['lon'] = '51.351587'
+        elif G.node[node]['affiliation'] == 'carnegie-learning-inc':
+            G.node[node]['location'] = 'USA'
+            G.node[node]['lat'] = '40.439827'
+            G.node[node]['lon'] = '-79.99717'
+        elif G.node[node]['affiliation'] == 'boulder-language-technologies':
+            G.node[node]['location'] = 'USA'
+            G.node[node]['lat'] = '40.030178'
+            G.node[node]['lon'] = '-105.245433'
+        elif G.node[node]['affiliation'] == 'philips-research-laboratories':
+            G.node[node]['location'] = 'Netherlands'
+            G.node[node]['lat'] = '51.413662'
+            G.node[node]['lon'] = '5.457087'
+        elif G.node[node]['affiliation'] == 'universidad-de-lima':
+            G.node[node]['location'] = 'Peru'
+            G.node[node]['lat'] = '-12.084562'
+            G.node[node]['lon'] = '-76.970785'
+        
+        if node == 'Paulo-Blikstein':
+            G.node[node]['affiliation'] = 'stanford-university'
+            G.node[node]['location'] = 'USA'
+            G.node[node]['lat'] = '37.43120595'
+            G.node[node]['lon'] = '-122.169387662134'
+        elif node == 'Michael-Atkisson':
+            G.node[node]['affiliation'] = 'dropthought'
+            G.node[node]['location'] = 'USA'
+            G.node[node]['lat'] = '37.361221'
+            G.node[node]['lon'] = '-121.947827'
+        elif node == 'David-Wiley':
+            G.node[node]['affiliation'] = 'brigham-young-university'
+            G.node[node]['location'] = 'USA'
+            G.node[node]['lat'] = '40.250479'
+            G.node[node]['lon'] = '-111.649039'
+        elif node == 'NO_AUTHORS':
+            G.remove_node(node)
+        elif node == 'Ryan-SJd-Baker': #repeated
+            G.remove_node(node)
+            
+    return G
+
             
 
 if __name__ == '__main__':
-    G = create_nodes()
-    G = create_edges(G)
-    G = analyze_graph(G)
-    G = get_geo_data(G)    
-    save_graph(G)
-    print 'fin'
+#    G = create_nodes()
+#    G = create_edges(G)
+#    G = analyze_graph(G)
+#    G = get_geo_data(G)
+#    G = clean_dataset(G)    
+#    save_graph(G,'./data/lak-coauthor.gexf')
+#    print 'fin'
+
+ 
 
 
-    
-
-
-            
-            
-    
-#req = urllib2.Request('http://nominatim.openstreetmap.org/search?q=university+of+leeds,+uk&format=json&polygon=1&addressdetails=1')
-#response = urllib2.urlopen(req)
-#the_page = response.read()            
-#            
+  
 
         
     
