@@ -1,0 +1,151 @@
+{% load static %}
+{% get_static_prefix as STATIC_PREFIX %}
+
+<!doctype html>
+    <head>
+        <title>LAK 2014 challenge</title>
+        <link rel="shortcut icon" href="{{ STATIC_PREFIX }}img/favicon.ico">
+
+        <meta charset="utf-8">
+
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" href="{{ STATIC_PREFIX }}css/style.css"/>
+
+        <style>
+            .background {
+              fill: none;
+              pointer-events: all;
+            }
+
+            #states {
+              fill: #aaa;
+            }
+
+            #country .active {
+              fill: orange;
+            }
+
+            #state-borders {
+              fill: none;
+              stroke: #fff;
+              stroke-width: 1.5px;
+              stroke-linejoin: round;
+              stroke-linecap: round;
+              pointer-events: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="mapContainer"></div>
+
+        <script src="{{ STATIC_PREFIX }}js/jquery-1.10.2.min.js"></script>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="http://d3js.org/topojson.v1.min.js"></script>
+
+        <script>
+
+            var width = 1400;
+            var height = 700;
+            var centered;
+
+            var projection = d3.geo.equirectangular().scale((width/640)*100).translate([width/2, height/2]);
+            var path = d3.geo.path().projection(projection);
+
+            var svg = d3.select("body").append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            svg.append("rect")
+                .attr("class", "background")
+                .attr("width", width)
+                .attr("height", height)
+                .on("click", clicked);
+
+            var g = svg.append("g");
+
+            var arc = d3.geo.greatArc();
+
+            var arcs = svg.append("g").attr("id", "arcs");
+
+            d3.json('{{ STATIC_PREFIX }}json/world-countries.json', function(collection) {
+                g.append("g")
+                    .attr("id", "country")
+                .selectAll("path").data(collection.features).enter()
+                    .append("path")
+                    .attr("d", path)
+                    .on("click", clicked);
+            });
+
+            d3.json('{{ STATIC_PREFIX }}json/lak-coauthor.json', function(collection) {
+                g.selectAll('circle').data(collection.nodes).enter()
+                    .append('circle')
+                    .attr("transform", function(d) {return "translate(" + projection([d.lon,d.lat]) + ")";})
+                    .attr("r", 1)
+                    .attr("fill", "blue")
+                    .attr("opacity", 0.5)
+                    .on("click", showInfo);
+            });
+
+            d3.json('{{ STATIC_PREFIX }}json/line-data.json', function(collection) {
+                var links = [];
+
+                // Create a link between each state centroid.
+                collection.lll.forEach(function(d) {
+                    console.log(d);
+                    console.log(d.source);
+                    links.push({
+                        source: d.source,
+                        target: d.target
+                    });
+                });
+
+              arcs.selectAll("path")
+                  .data(links)
+                .enter().append("path")
+                  .attr("d", function(d) { return path(arc(d)); });
+            });
+
+            function clicked(d) {
+                var x, y, k;
+
+                if (d && centered !== d) {
+                    coordinates = d3.mouse(this);
+                    var centroid = path.centroid(d);
+                    // x = centroid[0];
+                    // y = centroid[1];
+                    x = coordinates[0];
+                    y = coordinates[1];
+                    k = 10;
+                    centered = d;
+                }
+                else {
+                    x = width / 2;
+                    y = height / 2;
+                    k = 1;
+                    centered = null;
+                }
+
+                g.selectAll("path")
+                    .classed("active", centered && function(d) { return d === centered; });
+
+                g.transition()
+                    .duration(750)
+                    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
+                    .style("stroke-width", 1.5 / k + "px");
+                };
+
+                function showInfo(d) {
+                    console.log(d.affiliation);
+                };
+
+        </script>
+
+    </body>
+</html>

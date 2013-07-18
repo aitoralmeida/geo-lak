@@ -1,0 +1,188 @@
+{% load static %}
+{% get_static_prefix as STATIC_PREFIX %}
+
+<!doctype html>
+    <head>
+        <title>LAK 2014 challenge</title>
+        <link rel="shortcut icon" href="{{ STATIC_PREFIX }}img/favicon.ico">
+
+        <meta charset="utf-8">
+
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" href="{{ STATIC_PREFIX }}css/style.css"/>
+
+        <style>
+            .background {
+              fill: none;
+              pointer-events: all;
+            }
+
+            #states {
+              fill: #aaa;
+            }
+
+            #states .active {
+              fill: orange;
+            }
+
+            #state-borders {
+              fill: none;
+              stroke: #fff;
+              stroke-width: 1.5px;
+              stroke-linejoin: round;
+              stroke-linecap: round;
+              pointer-events: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="mapContainer"></div>
+
+        <script src="{{ STATIC_PREFIX }}js/jquery-1.10.2.min.js"></script>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+
+        <script>
+
+            function draw(ht) {
+                $("#mapContainer").html("<svg id='map' xmlns='http://www.w3.org/2000/svg' width='100%' height='" + ht + "'></svg>");
+                map = d3.select("svg");
+                var width = $("svg").parent().width();
+                var height = ht;
+                var centered;
+
+                // I discovered that the unscaled equirectangular map is 640x360. Thus, we
+                // should scale our map accordingly. Depending on the width ratio of the new
+                // container, the scale will be this ratio * 100. You could also use the height
+                // instead. The aspect ratio of an equirectangular map is 2:1, so that's why
+                // our height is half of our width.
+
+                projection = d3.geo.equirectangular().scale((width/640)*100).translate([width/2, height/2]);
+                var path = d3.geo.path().projection(projection);
+                d3.json('{{ STATIC_PREFIX }}json/world-countries.json', function(collection) {
+                    map.selectAll('path').data(collection.features).enter()
+                        .append('path')
+                        .attr('d', path)
+                        .attr("width", width)
+                        .attr("height", width/2)
+                        .on("click", clicked);
+                });
+
+                function clicked(d) {
+                    console.log(d);
+                    var x, y, k;
+
+                    if (d && centered !== d) {
+                        console.log("if");
+                        var centroid = path.centroid(d);
+                        x = centroid[0];
+                        y = centroid[1];
+                        k = 4;
+                        centered = d;
+                    }
+                    else {
+                        console.log("else");
+                        x = width / 2;
+                        y = height / 2;
+                        k = 1;
+                        centered = null;
+                    }
+
+                    map.selectAll("path")
+                        .classed("active", centered && function(d) { console.log("hey"); return d === centered; });
+
+                    map.transition()
+                        .duration(750)
+                        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
+                        .style("stroke-width", 1.5 / k + "px");
+                };
+
+                d3.json('{{ STATIC_PREFIX }}json/lak-coauthor.json', function(collection) {
+                    console.log(collection.nodes);
+                    map.selectAll('circle').data(collection.nodes).enter()
+                        .append('circle')
+                        .attr("transform", function(d) {return "translate(" + projection([d.lon,d.lat]) + ")";})
+                        .attr("r", 5)
+                        .attr("fill", "blue")
+                        .text(function(d) { return d.affiliation; });
+                });
+
+
+
+
+                // ------------------------------------------------------
+
+                // d3.json('{{ STATIC_PREFIX }}json/line-data.json', function(collection) {
+                //     console.log(collection.links);
+                //     map.selectAll('path').data(collection.links).enter()
+                //         .append('d', )
+                //         .attr("transform", function(d) {return "translate(" + projection([d.lon,d.lat]) + ")";})
+                //         .attr("r", 10)
+                //         .attr("fill", "blue")
+                //         .text(function(d) { return d.affiliation; });
+                // });
+
+                // var lineFunction = d3.svg.line()
+                //     .x(function(d) { return d.x; })
+                //     .y(function(d) { return d.y; })
+                //     .interpolate("linear");
+
+                // var lineGraph = map.append("path")
+                //     .attr("d", lineFunction(lineData))
+                //     .attr("stroke", "blue")
+                //     .attr("stroke-width", 2)
+                //     .attr("fill", "none");
+
+                // ------------------------------------------------------
+
+
+                //The data for our line
+//  2var lineData = [ { "x": 1,   "y": 5},  { "x": 20,  "y": 20},
+//  3                 { "x": 40,  "y": 10}, { "x": 60,  "y": 40},
+//  4                 { "x": 80,  "y": 5},  { "x": 100, "y": 60}];
+//  5
+//  6//This is the accessor function we talked about above
+//  7var lineFunction = d3.svg.line()
+//  8                         .x(function(d) { return d.x; })
+//  9                         .y(function(d) { return d.y; })
+// 10                         .interpolate("linear");
+// 11
+// 12//The SVG Container
+// 13var svgContainer = d3.select("body").append("svg")
+// 14                                    .attr("width", 200)
+// 15                                    .attr("height", 200);
+// 16
+// 17//The line SVG Path we draw
+// 18var lineGraph = svgContainer.append("path")
+// 19                            .attr("d", lineFunction(lineData))
+// 20                            .attr("stroke", "blue")
+// 21                            .attr("stroke-width", 2)
+// 22                            .attr("fill", "none");
+
+
+            }
+            draw($("#mapContainer").width()/2);
+
+            $(window).resize(function() {
+                if(this.resizeTO) clearTimeout(this.resizeTO);
+                this.resizeTO = setTimeout(function() {
+                    $(this).trigger('resizeEnd');
+                }, 500);
+            });
+
+            $(window).bind('resizeEnd', function() {
+                var height = $("#mapContainer").width()/2;
+                $("#mapContainer svg").css("height", height);
+                draw(height);
+            });
+
+        </script>
+
+    </body>
+</html>

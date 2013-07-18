@@ -1,0 +1,17 @@
+svg {
+    background-color: #a4c9f1;
+}
+
+path {
+    stroke: black;
+    stroke-width: 0.25px;
+    fill: #f2d3ad;
+}
+
+path:hover {
+    fill: #999;
+}
+
+path .active {
+    fill: orange;
+}
